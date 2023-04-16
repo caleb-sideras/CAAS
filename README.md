@@ -45,16 +45,13 @@ CAAS provides visualizations to help understand the different stages of the audi
 
 1. Install the required dependencies:
 
-<pre>
 ```bash
 pip install librosa numpy scipy scikit-learn matplotlib
 ```
-</pre>
 
 2. Import the AudioSegmentation class and create an instance with your audio file and the desired segment duration:
 
-<pre>
-```
+```python
 from caas import AudioSegmentation
 
 audio_file = 'your_audio_file.wav'
@@ -62,23 +59,19 @@ segment_duration = 60
 
 audio_segmentation = AudioSegmentation(audio_file, segment_duration)
 ```
-</pre>
 
 3. Run the segmentation algorithm and print the sections' start and end times:
 
-<pre>
-```
+```python
 sections_times = audio_segmentation.segment_audio()
 print(sections_times)
 ```
-</pre>
 
 4. Generate and display visualizations for each step of the algorithm:
-<pre>
-```
+
+```python
 audio_segmentation.plot_all_visualizations()
 ```
-</pre>
 
 License
 MIT License
