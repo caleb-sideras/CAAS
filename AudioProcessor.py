@@ -54,7 +54,7 @@ class AudioProcessor:
         for cluster, segments in new_clusters.items():
             cluster_list = []
             sorted_list = sorted(segments)
-            duration, start, end = map(float, segments[-1])
+            duration, start, end = map(float, sorted_list[-1])
             remaining_segments = sorted_list[:-1]
 
             current_y = y[round(start) * sr:round(end) * sr]
