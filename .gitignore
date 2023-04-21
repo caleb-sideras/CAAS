@@ -1,0 +1,6 @@
+main.py
+songs/
+out/
+pretrained_models/
+__pycache__/
+spleeter/

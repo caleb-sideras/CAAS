@@ -1,16 +1,196 @@
 # Caleb's Adaptive Audio Segmentation (CAAS)
 
-CAAS is an audio segmentation algorithm that iteratively finds the best intervals and patterns in a given audio signal using cosine similarity.
+CAAS is an audio segmentation algorithm that iteratively finds the best intervals and patterns in a given audio signal, clusters them based on similarity and then extracts relavent audio features (Lyrics, MIDI etc).
 
 ## Features
 
 - Adaptive interval selection based on maximizing cosine similarity
-- Robust detection of repeating patterns in the audio signal
-- Scalable and modular implementation for easy integration in production environments
+- Concatination and clustering of like segments
+- Feature extraction - Lyrics, MIDI etc
+
+## Dependencies
+
+- Python 3.x
+- Librosa
+- NumPy
+- SciPy
+- scikit-learn
+- Matplotlib
+- Soundfile
+
+## Usage
+
+1. Install the required dependencies:
+
+```bash
+pip install librosa numpy scipy scikit-learn matplotlib soundfile
+```
+
+2. Configure your path to vamp plugins in AudioToMidi.py
+```python
+os.environ['VAMP_PATH'] = 'path/to/conda/envs/your_environment_name/vamp_plugins'
+```
+
+3. Import the AudioProcessor class and create an instance with your input/ouput directory, vocal boolean and OpenAI API key:
+
+```python
+from AudioProcessor import AudioProcessor
+
+audio_directory = 'songs'
+has_vocals = True
+out_directory = 'out'
+openai_api_key = 'sk-...'
+
+ap = AudioProcessor(audio_directory, has_vocals, out_directory, openai_api_key)
+```
+
+4. Run the AudioProcessor algorithm and print the cluster data and json file path:
+
+```python
+audio_file = 'OliverTree-MissYou' # Currently only supports .wav
+
+cluster_data, json_filepath = ap.process_audio(audio_file)
+print(cluster_data, json_filepath)
+```
+
+5. See the output directory for MIDI, WAV and JSON data:
+
+Due to DMCA restrictions, I am unable to upload the segments that were generated from the song, but trust me... these segments/clusters are VERY similar. Listen to them and tell me i'm wrong!!!
+
+Example JSON data:
+```json
+{
+    "name": "OliverTree-MissYou",
+    "tempo": "143.5546875",
+    "clusters": [
+        [
+            {
+                "start": "159.11",
+                "end": "169.05",
+                "lyrics": "\n",
+                "midi": [
+                    {
+                        "time": "0.02",
+                        "duration": "0.35",
+                        "value": "69.0"
+                    },
+                   ...
+                    {
+                        "time": "4.56",
+                        "duration": "1.88",
+                        "value": "64.0"
+                    }
+                ],
+                "mfccs_mean": [
+                    "-209.791",
+                    ...
+                    "-3.9143062"
+                ],
+                "spectral_contrast_mean": [
+                    "22.790718187208242",
+                    ...
+                    "46.61503885640239"
+                ],
+                "chroma_cqt_mean": [
+                    "0.20598869",
+                    ...
+                    "0.36807323"
+                ]
+            },
+            {
+                "start": "159.11",
+                "end": "169.05"
+            },
+            {
+                "start": "79.47",
+                "end": "100.8"
+            }
+        ],
+        [
+            {
+                "start": "100.8",
+                "end": "120.23",
+                "lyrics": "I'm not angry, but if somebody else, it could be anyone else, I would say, I'm super mad. I'm super mad. What's that? Policeman!\n",
+                "midi": [
+                    {
+                        "time": "0.53",
+                        "duration": "0.4",
+                        "value": "68.0"
+                    },
+                    ...
+                    {
+                        "time": "19.22",
+                        "duration": "0.13",
+                        "value": "73.0"
+                    }
+                ],
+                "mfccs_mean": [
+                    "-21.953321",
+                    ...
+                    "-3.1610284"
+                ],
+                "spectral_contrast_mean": [
+                    "22.204617377186477",
+                    ...
+                    "48.983418602856524"
+                ],
+                "chroma_cqt_mean": [
+                    "0.24937618",
+                    ...
+                    "0.43595913"
+                ]
+            },
+            {
+                "start": "26.16",
+                "end": "40.1"
+            }
+        ],
+        [
+            {
+                "start": "120.23",
+                "end": "159.11",
+                "lyrics": "I am hoping to have hope in you. I am hoping to have hope in you. I am hoping to have hope in you. I am hoping to have hope in you.\n",
+                "midi": [
+                    {
+                        "time": "0.75",
+                        "duration": "0.19",
+                        "value": "52.0"
+                    },
+                    ...
+                    {
+                        "time": "38.65",
+                        "duration": "0.23",
+                        "value": "68.0"
+                    }
+                ],
+                "mfccs_mean": [
+                    "20.706696",
+                    ...
+                    "-0.2651905"
+                ],
+                "spectral_contrast_mean": [
+                    "21.721669854370656",
+                    ...
+                    "49.198337828822794"
+                ],
+                "chroma_cqt_mean": [
+                    "0.45558745",
+                    ...
+                    "0.56644934"
+                ]
+            },
+            {
+                "start": "120.23",
+                "end": "159.11"
+            }
+        ]
+    ]
+}
+```
 
 ## Visualizations
 
-CAAS provides visualizations to help understand the different stages of the audio segmentation process:
+CAAS provides visualizations to help understand the different stages of the initial audio segmentation process:
 
 1. **Waveform**: Displays the waveform of the input audio signal.
 
@@ -32,89 +212,9 @@ CAAS provides visualizations to help understand the different stages of the audi
 
 ![Segmentation](figures/segmentation.png)
 
-## Algorithm Overview
+## Code for Visualizations
 
-1. **Import necessary libraries**: Import `librosa` for audio processing, `numpy` for numerical operations, `sklearn.metrics.pairwise` for cosine similarity, and `scipy.signal` for convolutions.
-
-2. **Load the audio file**: Load the audio file using `librosa.load()`.
-
-3. **Compute the CQT**: Compute the CQT of the audio signal using `librosa.cqt()`, convert it to decibels with `librosa.amplitude_to_db()`, and normalize it along the time axis using `librosa.util.normalize()`.
-
-4. **Compute the self-similarity matrix**: Compute the self-similarity matrix by taking the dot product of the normalized CQT with itself.
-
-5. **Convolve the similarity matrix**: Convolve the similarity matrix with a diagonal kernel of size 10 to emphasize diagonal patterns, and threshold the result at the 90th percentile to create a binary result.
-
-6. **Define the cos_sim() function**: Define the `cos_sim()` function, which computes the cosine similarity between two input arrays.
-
-7. **Define the find_new_interval() function**: Define the `find_new_interval()` function, which takes a binary matrix and finds the best interval and the associated cosine similarity by comparing adjacent non-overlapping chunks in the input matrix.
-
-8. **Define the binary_to_time() and time_to_binary() functions**: Define the `binary_to_time()` and `time_to_binary()` functions to convert between binary column indices and time values.
-
-9. **Initialize variables**: Initialize variables for segment duration, start time, sections times, and the initial interval.
-
-10. **Iterate through the binary result matrix**: Iterate through the binary result matrix, comparing adjacent non-overlapping chunks. If their cosine similarity is significantly different from the mean of previous similarities, mark the current time as the end of the current section and the beginning of a new section. Update the interval and continue.
-
-11. **Append the last section's end time**: Once the iteration is complete, append the last section's end time.
-
-12. **Return the final sections times**: Return the final sections times, which represents the segments of the audio file with similar patterns.
-
-## Potential Flaws and Improvements
-
-1. **Audio Sanitization**: The current algorithm was designed for and performs better on sanitized audio segments, specifically a chunked song with removed vocals, percussion and noise. Future implementations will automate this.
-
-2. **Multichannel audio**: The current implementation only supports mono audio. The algorithm could be extended to support multichannel audio by processing each channel separately and combining the results.
-
-3. **Interval selection**: The algorithm assumes that the best interval is found by maximizing cosine similarity. This may not always produce accurate results. Exploring other similarity measures or refining the criteria for choosing intervals could improve segmentation.
-
-4. **Thresholds**: The algorithm has fixed thresholds for segmentation based on my training data. Future iterations of the algorithm will support adpative thresholds based on time intervals, cosine similarity STD and more.
-
-5. **Error handling**: The code does not have proper error handling in case an issue occurs during the execution of the algorithm.Future iterations will have error handling and informative error messages can make the algorithm more robust and user-friendly.
-
-
-## Dependencies
-
-- Python 3.x
-- Librosa
-- NumPy
-- SciPy
-- scikit-learn
-- Matplotlib
-
-## Usage
-
-1. Install the required dependencies:
-
-```bash
-pip install librosa numpy scipy scikit-learn matplotlib
-```
-
-2. Import the AudioSegmentation class and create an instance with your audio file and the desired segment duration:
-
-```python
-from caas import AudioSegmentation
-
-audio_file = 'your_audio_file.wav'
-segment_duration = 60
-
-audio_segmentation = AudioSegmentation(audio_file, segment_duration)
-```
-
-3. Run the segmentation algorithm and print the sections' start and end times:
-
-```python
-sections_times = audio_segmentation.segment_audio()
-print(sections_times)
-```
-
-4. Generate and display visualizations for each step of the algorithm:
-
-```python
-audio_segmentation.plot_all_visualizations()
-```
-
-## Visualizations
-
-1. Initialization
+1. Initialization of AudioSegmentation class
 
 ```python
 from caas import AudioSegmentation
@@ -155,12 +255,60 @@ plot_segmentation(audio_segmentation, audio_segmentation.binary_result, sections
 plt.show()
 ```
 
+## Potential Flaws and Improvements
+
+1. **Multichannel audio**: The current implementation only supports mono audio. The algorithm could be extended to support multichannel audio by processing each channel separately and combining the results.
+
+2. **Interval selection**: The algorithm assumes that the best interval is found by maximizing cosine similarity. This may not always produce accurate results. Exploring other similarity measures or refining the criteria for choosing intervals could improve segmentation.
+
+3. **Error handling**: The code does not have proper error handling in case an issue occurs during the execution of the algorithm.Future iterations will have error handling and informative error messages can make the algorithm more robust and user-friendly.
+
+4. **Transcription**: Lyric extraction is super janky using OpenAI's Whisper model, as it's designed for regular speech. Open to alternate suggestions. 
+
 ## Notes
 
 This algorithm serves as a minor component of a web application I'm developing called "MusicGPT." MusicGPT is a chatbot designed to enable users to inquire about various aspects of a song, from lyrics to intricate musical terminology. I decided to open-source the segmentation algorithm because I believe it offers a unique yet straightforward solution to segmentation. If you're interested in MusicGPT's development, please feel free to contact me.
 
+To get spleeter running with Python 3, clone the repo in the CAAS directory and change useless_config.json to the following:
+
+```json
+{
+    "mix_name": "mix",
+    "instrument_list": [
+        "vocals",
+        "other"
+    ],
+    "sample_rate": 44100,
+    "frame_length": 4096,
+    "frame_step": 1024,
+    "T": 128,
+    "F": 128,
+    "n_channels": 2,
+    "chunk_duration": 4,
+    "n_chunks_per_song": 1,
+    "separation_exponent": 2,
+    "mask_extension": "zeros",
+    "learning_rate": 0.0001,
+    "batch_size": 2,
+    "train_max_steps": 10,
+    "throttle_secs": 20,
+    "save_checkpoints_steps": 100,
+    "save_summary_steps": 5,
+    "random_seed": 0,
+    "model": {
+        "type": "unet.unet",
+        "params": {
+            "conv_activation": "ELU",
+            "deconv_activation": "ELU"
+        }
+    },
+    "train_csv": "/tmp/tmppkwgulux/train/train.csv",
+    "validation_csv": "/tmp/tmppkwgulux/train/train.csv",
+    "model_dir": "/tmp/tmppkwgulux/model_2",
+    "training_cache": "/tmp/tmppkwgulux/cache_2/training",
+    "validation_cache": "/tmp/tmppkwgulux/cache_2/validation"
+}
+```
+
 License
 MIT License
-
-
-In this README.md, we've included a brief description of the algorithm, its features, visualizations, dependencies, usage instructions, and licensing information. Replace the image file names (e.g., `waveform.png`, `cqt.png`, etc.) with the actual file paths of your visualization images. You can generate these visualization images using the provided plotting functions, and save them using `plt.savefig()` before calling `plt.show()`.

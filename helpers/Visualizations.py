@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
-import librosa.display
-from AudioSegmentation import AudioSegmentation
+import librosa
 import numpy as np
 
 def plot_waveform(y, sr):
@@ -70,8 +69,8 @@ def plot_binary_result_with_kernel(binary_result, kernel):
     # Plot binary result
     im1 = ax1.imshow(binary_result, aspect='auto', cmap='gray_r', origin='lower')
     ax1.set_title('Binary Result')
-    ax1.set_xlabel('Time Segment')
-    ax1.set_ylabel('Time Segment')
+    ax1.set_xlabel('Time (s)')
+    ax1.set_ylabel('Frequency Bin')
     fig.colorbar(im1, ax=ax1)
 
     # Plot convolution kernel
@@ -87,3 +86,37 @@ def plot_binary_result_with_kernel(binary_result, kernel):
                  arrowprops=dict(facecolor='black', shrink=0.05), fontsize=12, ha='center')
 
     plt.tight_layout()
+
+def plot_segments(binary_result, segments, song_length):
+    segment_length = 30
+    num_segments_30s = song_length // segment_length + 1
+
+    for i in range(num_segments_30s):
+        start_time_30s = i * segment_length
+        end_time_30s = min((i + 1) * segment_length, song_length)
+        start_binary_30s = int((start_time_30s * binary_result.shape[1]) // song_length)
+        end_binary_30s = int((end_time_30s * binary_result.shape[1]) // song_length)
+
+        binary_result_30s = binary_result[:, start_binary_30s:end_binary_30s]
+
+        fig, ax = plt.subplots(figsize=(15, 5))
+        ax.imshow(binary_result_30s, aspect='auto', cmap='gray_r')
+
+        for start_time, end_time in segments:
+            start_binary = int((start_time * binary_result.shape[1]) // song_length)
+            end_binary = int((end_time * binary_result.shape[1]) // song_length)
+
+            if start_time_30s <= start_time < end_time_30s:
+                ax.axvline(start_binary - start_binary_30s, linestyle='--', color='red')
+            if start_time_30s <= end_time < end_time_30s:
+                ax.axvline(end_binary - start_binary_30s, linestyle='--', color='red')
+
+        ax.set_xticks(np.linspace(0, binary_result_30s.shape[1], 6))
+        ax.set_xticklabels(np.round(np.linspace(start_time_30s, end_time_30s, 6), 2))
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Frequency Bin')
+
+        plt.show(block=False)
+
+    input("Press Enter to close all windows...")
+    plt.close('all')
